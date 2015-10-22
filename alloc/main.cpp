@@ -26,7 +26,7 @@ struct AllocKernel {
 	auto nThreads  = globalThreadIdx(acc);
 	std::cout << "[" << nThreads << "]" << " Hello World" << std::endl;
 
-	auto ptr = alpaka::mem::alloc::alloc<char, T_Acc>(acc, nThreads);
+	alpaka::mem::alloc::alloc<char, T_Acc>(acc, nThreads);
     }
 
 };
