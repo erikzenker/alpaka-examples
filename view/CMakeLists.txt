@@ -1,4 +1,4 @@
-project(alpaka-example-helloworld)
+project(alpaka-example-view)
 cmake_minimum_required(VERSION 3.0.1)
 
 ################################################################################
@@ -25,8 +25,8 @@ endif()
 ###############################################################################
 # Executables
 ###############################################################################
-set(helloworld "helloworld")
+set(view "view")
 file(GLOB SRCFILES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 
-add_executable(${helloworld} ${SRCFILES})
-target_link_libraries(${helloworld} ${LIBS})
+add_executable(${view} ${SRCFILES})
+target_link_libraries(${view} ${LIBS})

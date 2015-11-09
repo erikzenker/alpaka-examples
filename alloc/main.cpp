@@ -24,9 +24,8 @@ struct AllocKernel {
     ALPAKA_FN_ACC void operator()( T_Acc const &acc) const {
 
 	auto nThreads  = globalThreadIdx(acc);
-	std::cout << "[" << nThreads << "]" << " Hello World" << std::endl;
 
-	alpaka::mem::alloc::alloc<char, T_Acc>(acc, nThreads);
+	alpaka::mem::alloc::alloc<char>(acc, nThreads);
     }
 
 };
@@ -37,8 +36,8 @@ int main() {
     // Set types 
     using Dim     = alpaka::dim::DimInt<3>;  
     using Size    = std::size_t;
-    using Extents = Size;
-    using Host    = alpaka::acc::AccCpuSerial<Dim, Size>;
+    //using Extents = Size;
+    //using Host    = alpaka::acc::AccCpuSerial<Dim, Size>;
     using Acc     = alpaka::acc::AccCpuOmp2Threads<Dim, Size>;
     using Stream  = alpaka::stream::StreamCpuSync;
     using DevAcc  = alpaka::dev::Dev<Acc>;
