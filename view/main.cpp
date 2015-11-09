@@ -104,7 +104,7 @@ int main() {
 
 
     /***************************************************************************
-     * Get the first device
+     * Get the first device on acc and host
      **************************************************************************/
     DevAcc  devAcc  (alpaka::dev::DevMan<Acc>::getDevByIdx(0));
     DevHost devHost (alpaka::dev::cpu::getDev());
@@ -126,7 +126,7 @@ int main() {
     
     
     /***************************************************************************
-     * Create host and device buffers
+     * Create host and acc buffers
      **************************************************************************/
     std::cout << "Create Buffer" << std::endl;    
     using Data = unsigned;
@@ -137,7 +137,7 @@ int main() {
     					    static_cast<Size>(nElements));
 
     alpaka::mem::buf::Buf<DevHost, Data, DimMem, Size> hostBuffer   ( alpaka::mem::buf::alloc<Data, Size>(devHost, extents));
-    alpaka::mem::buf::Buf<DevAcc, Data, DimMem, Size>  deviceBuffer ( alpaka::mem::buf::alloc<Data, Size>(devAcc,  extents));
+    alpaka::mem::buf::Buf<DevAcc, Data, DimMem, Size>  accBuffer ( alpaka::mem::buf::alloc<Data, Size>(devAcc,  extents));
 
 
     /***************************************************************************
@@ -148,55 +148,68 @@ int main() {
 
     auto const init (alpaka::exec::create<Acc> (workdiv,
     						initBufferKernel,
-    						alpaka::mem::view::getPtrNative(deviceBuffer),
+    						alpaka::mem::view::getPtrNative(accBuffer),
     						extents,
 						initValue));
-    std::cout << "Init device buffer" << std::endl;    
+    std::cout << "Init acc buffer" << std::endl;    
     alpaka::stream::enqueue(stream, init);    
 
-    // /***************************************************************************
-    //  * Write some data to host buffer
-    //  **************************************************************************/
-    // std::cout << "Write data to host buffer" << std::endl;        
-    // for(size_t i = 0; i < extents.prod(); ++i){
-    // 	alpaka::mem::view::getPtrNative(hostBuffer)[i] = i;
-    // }
+    
+    /***************************************************************************
+     * Write some data to host buffer
+     **************************************************************************/
+    std::cout << "Write data to host buffer" << std::endl;        
+    for(size_t i = 0; i < extents.prod(); ++i){
+    	alpaka::mem::view::getPtrNative(hostBuffer)[i] = i;
+    }
     
 
-    // /***************************************************************************
-    //  * Copy host to device Buffer
-    //  **************************************************************************/
-    // std::cout << "Copy host to device buffer" << std::endl;
-    // alpaka::mem::view::copy(stream, deviceBuffer, hostBuffer, extents);    
-
-
-
-    // /***************************************************************************
-    //  * Test device Buffer
-    //  **************************************************************************/
-    // TestBufferKernel testBufferKernel;
-    // auto const test (alpaka::exec::create<Acc> (workdiv,
-    // 						testBufferKernel,
-    // 						alpaka::mem::view::getPtrNative(deviceBuffer),
-    // 						extents));
-
-
-    // std::cout << "Test device buffer" << std::endl;        
-    // alpaka::stream::enqueue(stream, test);
-
-
     /***************************************************************************
-     * Create view
+     * Create view for host
      **************************************************************************/
+    std::cout << "Create view host" << std::endl;    
     using DataView = alpaka::mem::view::View<DevHost,
 					     Data,
 					     alpaka::dim::DimInt<1>,
 					     Size>;
 
     
-    auto view = alpaka::mem::view::createView<DataView>(hostBuffer);
+    auto hostView = alpaka::mem::view::createView<DataView>(hostBuffer);
+
+    /***************************************************************************
+     * Create view for acc
+     **************************************************************************/
+    std::cout << "Create view acc" << std::endl;    
+    using DataView = alpaka::mem::view::View<DevAcc,
+					     Data,
+					     alpaka::dim::DimInt<1>,
+					     Size>;
+
+    
+    auto accView = alpaka::mem::view::createView<DataView>(accBuffer);
+    
+
+    /***************************************************************************
+     * Copy host to device Buffer
+     **************************************************************************/
+    std::cout << "Copy host to device buffer" << std::endl;
+    alpaka::mem::view::copy(stream, accView, hostView, extents.prod());    
 
 
+    /***************************************************************************
+     * Test acc Buffer
+     **************************************************************************/
+    TestBufferKernel testBufferKernel;
+    auto const test (alpaka::exec::create<Acc> (workdiv,
+    						testBufferKernel,
+    						alpaka::mem::view::getPtrNative(accBuffer),
+    						extents));
+
+
+    std::cout << "Test acc buffer" << std::endl;        
+    alpaka::stream::enqueue(stream, test);
+    
+    
     return 0;
     
 }

@@ -152,7 +152,8 @@ int main() {
     						extents,
 						initValue));
     std::cout << "Init device buffer" << std::endl;    
-    alpaka::stream::enqueue(stream, init);    
+    alpaka::stream::enqueue(stream, init);
+    
 
     /***************************************************************************
      * Write some data to host buffer

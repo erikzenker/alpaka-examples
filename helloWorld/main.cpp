@@ -4,18 +4,17 @@
 // Alpaka
 #include <alpaka/alpaka.hpp>
 
-
 template <typename T_Acc>
 size_t globalThreadIdx(T_Acc const &acc){
     auto threadsExtent = alpaka::workdiv::getWorkDiv<alpaka::Grid, alpaka::Threads>(acc);
-    auto nThreadsVec = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(acc);
+    auto threadIdx = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(acc);
     
-    auto nThreads =
-	nThreadsVec[0]
-	+ nThreadsVec[1] * threadsExtent[0]
-	+ nThreadsVec[2] * threadsExtent[0] * threadsExtent[1];
+    auto globalThreadIdx =
+	threadIdx[0]
+	+ threadIdx[1] * threadsExtent[0]
+	+ threadIdx[2] * threadsExtent[0] * threadsExtent[1];
 
-    return nThreads;
+    return globalThreadIdx;
 }
 
 
@@ -23,8 +22,7 @@ struct HelloWorldKernel {
     template <typename T_Acc>
     ALPAKA_FN_ACC void operator()( T_Acc const &acc) const {
 
-	auto nThreads  = globalThreadIdx(acc);
-	std::cout << "[" << nThreads << "]" << " Hello World" << std::endl;
+	std::cout << "[" << globalThreadIdx(acc) << "]" << " Hello World" << std::endl;
     }
 
 };
@@ -35,7 +33,6 @@ int main() {
     // Set types 
     using Dim     = alpaka::dim::DimInt<3>;  
     using Size    = std::size_t;
-    using Extents = Size;
     using Host    = alpaka::acc::AccCpuSerial<Dim, Size>;
     using Acc     = alpaka::acc::AccCpuOmp2Threads<Dim, Size>;
     using Stream  = alpaka::stream::StreamCpuSync;
@@ -45,7 +42,8 @@ int main() {
 
     // Get the first device
     DevAcc  devAcc  (alpaka::dev::DevMan<Acc>::getDevByIdx(0));
-    DevHost devHost (alpaka::dev::cpu::getDev());
+    // DevHost devHost (alpaka::dev::cpu::getDev());
+    DevHost devHost (alpaka::dev::DevMan<Host>::getDevByIdx(0));    
     Stream  stream  (devAcc);
 
 
@@ -64,10 +62,10 @@ int main() {
     // Run kernel
     HelloWorldKernel helloWorldKernel;
 
-    auto const exec (alpaka::exec::create<Acc> (workdiv,
-						helloWorldKernel));
+    auto const helloWorld (alpaka::exec::create<Acc> (workdiv,
+						      helloWorldKernel));
 
-    alpaka::stream::enqueue(stream, exec);
+    alpaka::stream::enqueue(stream, helloWorld);
     
     return 0;
 }
